@@ -354,15 +354,15 @@ module GitFastClone
       # To avoid corruption of the cache, if we failed to update or check out we remove
       # the cache directory entirely. This may cause the current clone to fail, but if the
       # underlying error from git is transient it will not affect future clones.
-      clear_cache(mirror, url) unless invalid_credentials_error?(error)
+      #
+      # The only exception to this is authentication failures, because they are transient,
+      # usually due to either a remote server outage or a local credentials config problem.
+      clear_cache(mirror, url) unless auth_error?(e.output)
       raise e if fail_hard
     end
 
-    def invalid_credentials_error?(error)
-      error_strings = [
-        /^fatal: Authentication failed/
-      ]
-      error.to_s =~ /.*#{Regexp.union(error_strings)}/m
+    def auth_error?(error)
+      error.to_s =~ /.*^fatal: Authentication failed/m
     end
 
     def retriable_error?(error)
